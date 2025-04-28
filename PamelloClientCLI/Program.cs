@@ -1,4 +1,7 @@
-﻿using PamelloClientCLI.Enumerators;
+﻿using System.Security.Principal;
+using PamelloClientCLI.Enumerators;
+using PamelloV7.Wrapper;
+using PamelloV7.Wrapper.Model;
 
 namespace PamelloClientCLI;
 
@@ -8,7 +11,7 @@ command: -c [command name] [command args, ...]
 alias: -a [from] [to]
     if {from} is "remove", remove alias at {to} position
 data: -d [repo] [value]
-server: -s [address]
+server: -s [address] [token]
 help: -h
 
 */
@@ -20,9 +23,11 @@ class Program
     public string[] SecondArgs;
 
     public readonly SavedInfo SavedInfo;
+    public readonly PamelloClient Pamello;
 
     public Program() {
         SavedInfo = new SavedInfo();
+        Pamello = new PamelloClient();
     }
     
     public static Task Main(string[] args) => new Program().MainAsync(args);
@@ -30,6 +35,12 @@ class Program
     private async Task MainAsync(string[] args) {
         if (!ParseArgs(args)) return;
         SavedInfo.Load();
+
+        switch (Command)
+        {
+            case ECommand.Server: await Server(FirstArg, SecondArgs[0]); break; 
+            case ECommand.Data: await Data(FirstArg, SecondArgs[0]); break; 
+        }
     }
 
     public bool ParseArgs(string[] args) {
@@ -59,6 +70,7 @@ class Program
             if (args[0][1] == 'd') {
                 SecondArgs = new string[1];
                 SecondArgs[0] = args.ElementAtOrDefault(2) ?? "current";
+                Command = ECommand.Data;
                 return true;
             }
             
@@ -82,7 +94,71 @@ class Program
         return true;
     }
 
+    public async Task<bool> CommandAuthorize()
+    {
+        Pamello.ServerHost = SavedInfo.ServerAddress;
+        await Pamello.Authorization.WithTokenAsync(SavedInfo.Token!.Value);
+        return true;
+    }
+    
     public void WriteHelp(ECommand? command = null) {
         Console.WriteLine("helop");
     }
+    
+    public async Task Server(string address, string tokencode)
+    {   
+        Pamello.ServerHost = address;
+
+        if (int.TryParse(tokencode, out var code))
+        {
+            await Pamello.Authorization.WithCodeAsync(code);
+        }
+        else if (Guid.TryParse(tokencode, out var token))
+        {
+            await Pamello.Authorization.WithTokenAsync(token);
+        }
+
+        SavedInfo.ServerAddress = Pamello.ServerHost;
+        SavedInfo.Token = Pamello.Authorization.UserToken;
+        SavedInfo.Save();
+    }
+
+    public void Alias()
+    {
+        
+    }
+
+    public async Task Data(string repo, string value)
+    {
+        await CommandAuthorize();
+        
+        switch (repo.ToLower())
+        {
+            case "user":
+            {
+                var user = await Pamello.Users.GetNew(value);
+                Console.WriteLine($"Name: {user.Name}");
+                break;
+            }
+            case "player":
+            {
+                var player = await Pamello.Players.GetNew(value);;
+                Console.WriteLine($"Name: {player.Name}");
+                break;
+            }
+            case "episode":
+            {
+                var episode = await Pamello.Episodes.GetNew(value);
+                Console.WriteLine($"Name: {episode.Name}");
+                break;
+            }
+            case "song":
+            {
+                var song = await Pamello.Songs.GetNew(value);
+                Console.WriteLine($"Name: {song.Name}");
+                break;
+            }
+        }
+    }
+    
 }

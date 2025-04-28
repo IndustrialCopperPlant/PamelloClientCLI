@@ -22,30 +22,41 @@ class Program
     public string FirstArg;
     public string[] SecondArgs;
 
-    public readonly SavedInfo SavedInfo;
-    public readonly PamelloClient Pamello;
+    private readonly SavedInfo _savedInfo;
+    private readonly PamelloClient _pamello;
+
+    private readonly Commands _commands;
 
     public Program() {
-        SavedInfo = new SavedInfo();
-        Pamello = new PamelloClient();
+        _savedInfo = new SavedInfo();
+        _pamello = new PamelloClient();
+        
+        _commands = new Commands(_savedInfo, _pamello);
     }
     
     public static Task Main(string[] args) => new Program().MainAsync(args);
     
     private async Task MainAsync(string[] args) {
         if (!ParseArgs(args)) return;
-        SavedInfo.Load();
+        _savedInfo.Load();
 
         switch (Command)
         {
-            case ECommand.Server: await Server(FirstArg, SecondArgs[0]); break; 
-            case ECommand.Data: await Data(FirstArg, SecondArgs[0]); break; 
+            case ECommand.Server:
+            {
+                var tokencode = SecondArgs.ElementAtOrDefault(0);
+                if (tokencode is null) {
+                    Console.WriteLine("token/code is required");
+                    return;
+                }
+                
+                await _commands.Server(FirstArg, tokencode);
+            } break;
+            case ECommand.Data: await _commands.Data(FirstArg, SecondArgs[0]); break; 
         }
     }
 
     public bool ParseArgs(string[] args) {
-        int argPosition = 0;
-
         if (args.Length == 0 || args[0] == "-h") {
             WriteHelp();
             return false;
@@ -62,7 +73,7 @@ class Program
         }
         else {
             if (args.Length < 2) {
-                Console.WriteLine("yeblan");
+                Console.WriteLine("At least one argument is required");
                 return false;
             }
             FirstArg = args[1];
@@ -85,7 +96,7 @@ class Program
                 case 'd': Command = ECommand.Data; break;
                 case 's': Command = ECommand.Server; break;
                 default: {
-                    Console.WriteLine($"Unknown '{argPosition}' command");
+                    Console.WriteLine($"Unknown '{args[0]}' command");
                     return false;
                 }
             }
@@ -94,71 +105,7 @@ class Program
         return true;
     }
 
-    public async Task<bool> CommandAuthorize()
-    {
-        Pamello.ServerHost = SavedInfo.ServerAddress;
-        await Pamello.Authorization.WithTokenAsync(SavedInfo.Token!.Value);
-        return true;
-    }
-    
     public void WriteHelp(ECommand? command = null) {
         Console.WriteLine("helop");
     }
-    
-    public async Task Server(string address, string tokencode)
-    {   
-        Pamello.ServerHost = address;
-
-        if (int.TryParse(tokencode, out var code))
-        {
-            await Pamello.Authorization.WithCodeAsync(code);
-        }
-        else if (Guid.TryParse(tokencode, out var token))
-        {
-            await Pamello.Authorization.WithTokenAsync(token);
-        }
-
-        SavedInfo.ServerAddress = Pamello.ServerHost;
-        SavedInfo.Token = Pamello.Authorization.UserToken;
-        SavedInfo.Save();
-    }
-
-    public void Alias()
-    {
-        
-    }
-
-    public async Task Data(string repo, string value)
-    {
-        await CommandAuthorize();
-        
-        switch (repo.ToLower())
-        {
-            case "user":
-            {
-                var user = await Pamello.Users.GetNew(value);
-                Console.WriteLine($"Name: {user.Name}");
-                break;
-            }
-            case "player":
-            {
-                var player = await Pamello.Players.GetNew(value);;
-                Console.WriteLine($"Name: {player.Name}");
-                break;
-            }
-            case "episode":
-            {
-                var episode = await Pamello.Episodes.GetNew(value);
-                Console.WriteLine($"Name: {episode.Name}");
-                break;
-            }
-            case "song":
-            {
-                var song = await Pamello.Songs.GetNew(value);
-                Console.WriteLine($"Name: {song.Name}");
-                break;
-            }
-        }
-    }
-    
 }

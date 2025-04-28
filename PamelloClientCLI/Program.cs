@@ -18,18 +18,18 @@ class Program
     public ECommand Command;
     public string FirstArg;
     public string[] SecondArgs;
+
+    public readonly SavedInfo SavedInfo;
+
+    public Program() {
+        SavedInfo = new SavedInfo();
+    }
     
     public static Task Main(string[] args) => new Program().MainAsync(args);
     
     private async Task MainAsync(string[] args) {
         if (!ParseArgs(args)) return;
-
-        Console.WriteLine($"Command: {Command}");
-        Console.WriteLine($"First aRh: {FirstArg}");
-        Console.WriteLine("Second args:");
-        foreach (var arg in SecondArgs) {
-            Console.WriteLine(arg);
-        }
+        SavedInfo.Load();
     }
 
     public bool ParseArgs(string[] args) {

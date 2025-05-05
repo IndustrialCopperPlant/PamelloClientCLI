@@ -38,12 +38,18 @@ class Program
         _savedInfo.Load();
 
         _pamello.ServerHost = "127.0.0.1:51630";
-        await _pamello.Authorization.WithTokenAsync(Guid.Parse("D01E6353-2EC7-469C-81A5-D3084FB17151"));
+        await _pamello.Authorization.WithTokenAsync(Guid.Parse("71205227-970C-419A-9205-33FF509C1821"));
 
         var command = new DataCommand(_pamello);
-        command.Args.Add("player");
-        command.InitFromArgs();
-
+        command.EntityValue = "current";
+        
+        command.Repository = ERepositoryName.Player;
+        await command.Execute();
+        command.Repository = ERepositoryName.User;
+        await command.Execute();
+        command.Repository = ERepositoryName.Song;
+        await command.Execute();
+        command.Repository = ERepositoryName.Episode;
         await command.Execute();
 
         //WriteHelp();

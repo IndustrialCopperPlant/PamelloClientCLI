@@ -12,4 +12,7 @@ public abstract class Command
     }
     
     public abstract Task Execute();
+    
+    public abstract string Help();
+    public abstract string Examples();
 }

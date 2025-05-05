@@ -7,14 +7,6 @@ using PamelloV7.Wrapper.Model;
 namespace PamelloClientCLI;
 
 /*
-
-command: -c [command name] [command args, ...]
-alias: -a [from] [to]
-    if {from} is "remove", remove alias at {to} position
-data: -d [repo] [value]
-server: -s [address] [token]
-help: -h
-
 */
 
 class Program
@@ -40,13 +32,97 @@ class Program
     private async Task MainAsync(string[] args) {
         if (!ParseArgs(args)) return;
         _savedInfo.Load();
+        
+        WriteHelp();
     }
 
     public bool ParseArgs(string[] args) {
-        return false;
+        return true;
     }
 
     public void WriteHelp(ECommand? command = null) {
-        Console.WriteLine("helop");
+        Console.WriteLine(@"Help:
+
+-A, --authorize <server host> <code | token>
+    <server host>: host of server in ip:port format. if port is not provided, default 51630 port will be used
+    <code | token>: code or token that will be used for authorization
+    
+    if only one argument is provided, it will be used as code | token on last used server
+
+
+-c, --command <command> [args...]
+    <command>: name of the command that will be executed
+    [args...]: arguments that will be passed to command
+    
+    allows to execute command on server
+
+    if no arguments are provided, list of all available commands will be displayed
+
+
+-a, --alias <alias from> <to command>
+    <alias from>: alias that will be used to execute command
+    <to command>: command that will be executed
+    
+    create an alias to command name (only name, for arguments use macro)
+
+
+-m, --macro [command > command > ...]
+    command: command in format: <command> [args...]
+
+    create macro to execute multiple commands with arguments in sequence
+
+
+-d, --data <repository> <value>
+    <repository>: player | user | song | episode
+    <value>: value of entity in repository, like id, name, etc.
+    
+    get data of entity in repository
+
+
+-s, --search <repository> <query> <page>
+    <repository>: player | user | song | episode
+    <query>: query that will be used for search
+    <page>: page of search results (optional, default 1)
+
+    search for entities in repository
+    
+    
+-h, --help
+    display this help message
+
+
+Examples:
+
+
+Authorization:
+    pamello -A 127.0.0.1 343121
+    pamello -A 127.0.0.1 00c977a6-22c5-429f-af62-46e830f03dc1
+
+Command:
+    pamello -c Skip
+    pamello -c SongFavoriteAdd current
+
+Alias:
+    pamello -a sfa SongFavoriteAdd
+    pamello -a ps PlayerSelect
+
+    So later you can use:
+        pamello ps 1
+        pamello sfa current
+
+Macro:
+    pamello -m sfac SongFavoriteAdd current
+    pamello -m init SpeakerConnect > PlayerQueueFeedRandom true
+
+Data:
+    pamello -d player
+    pamello -d user
+    pamello -d user 3
+    pamello -d song 1000
+
+Search:
+    pamello -s players
+    pamello -s songs ""artur pirozhkov""
+");
     }
 }

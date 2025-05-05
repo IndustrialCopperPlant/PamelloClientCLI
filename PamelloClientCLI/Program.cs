@@ -1,4 +1,5 @@
 ﻿using System.Security.Principal;
+using System.Text;
 using PamelloClientCLI.Commands;
 using PamelloClientCLI.Enumerators;
 using PamelloV7.Wrapper;
@@ -11,7 +12,7 @@ namespace PamelloClientCLI;
 
 class Program
 {
-    public ECommand Command;
+    public ECommandName CommandName;
     public string FirstArg;
     public string[] SecondArgs;
 
@@ -30,17 +31,29 @@ class Program
     public static Task Main(string[] args) => new Program().MainAsync(args);
     
     private async Task MainAsync(string[] args) {
+        Console.InputEncoding = Encoding.Unicode;
+        Console.OutputEncoding = Encoding.Unicode;
+        
         if (!ParseArgs(args)) return;
         _savedInfo.Load();
-        
-        WriteHelp();
+
+        _pamello.ServerHost = "127.0.0.1:51630";
+        await _pamello.Authorization.WithTokenAsync(Guid.Parse("D01E6353-2EC7-469C-81A5-D3084FB17151"));
+
+        var command = new DataCommand(_pamello);
+        command.Args.Add("player");
+        command.InitFromArgs();
+
+        await command.Execute();
+
+        //WriteHelp();
     }
 
     public bool ParseArgs(string[] args) {
         return true;
     }
 
-    public void WriteHelp(ECommand? command = null) {
+    public void WriteHelp(ECommandName? command = null) {
         Console.WriteLine(@"Help:
 
 -A, --authorize <server host> <code | token>
@@ -56,7 +69,7 @@ class Program
     
     allows to execute command on server
 
-    if no arguments are provided, list of all available commands will be displayed
+    if no arguments are provided, list all commands
 
 
 -a, --alias <alias from> <to command>
@@ -65,11 +78,21 @@ class Program
     
     create an alias to command name (only name, for arguments use macro)
 
+    if no arguments are provided, list all aliases
 
--m, --macro [command > command > ...]
+
+-m, --macro <name> [command > command > ...]
+    <name>: name of the macro
     command: command in format: <command> [args...]
 
     create macro to execute multiple commands with arguments in sequence
+
+    if no arguments are provided, list all macros
+
+-r, --remove <name>
+    <name>: name of the macro or alias to remove
+
+    remove macro or alias
 
 
 -d, --data <repository> <value>

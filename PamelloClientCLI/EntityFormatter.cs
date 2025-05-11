@@ -23,6 +23,91 @@ public class EntityFormatter
         throw new Exception("Unrecognized entity");
     }
 
+    private static string GetFrame(string lNote, string rNote, string header, IEnumerable<string> blocks) {
+        var maxWidth = 0;
+        var lineWidth = 0;
+        var topHeaderWidth = lNote.Length + rNote.Length;
+        
+        foreach (var block in blocks) {
+            foreach (var c in block) {
+                if (c != '\n') lineWidth++;
+                else {
+                    if (lineWidth > maxWidth) maxWidth = lineWidth;
+                    lineWidth = 0;
+                }
+            }
+            
+            if (lineWidth > maxWidth) maxWidth = lineWidth;
+            lineWidth = 0;
+        }
+        
+        if (header.Length > maxWidth) maxWidth = header.Length;
+        if (topHeaderWidth > maxWidth) maxWidth = topHeaderWidth;
+        
+        if (maxWidth - topHeaderWidth < 3) maxWidth = topHeaderWidth + 3;
+        
+        var sb = new StringBuilder();
+/*
+┌─1──────────────────544933092503060509─┐
+│                Marsoau                │
+├───────────────────────────────────────┤
+│ Selected player: Marsoau`s Player [1] │
+│ Songs Added: 1500                     │
+│ Songs Played: 2000                    │
+│ Joined At: 11.11.2024 - 02:05:57      │
+└───────────────────────────────────────┘
+*/
+        //top header
+        sb.Append('┌');
+        sb.Append('─');
+        sb.Append(lNote);
+        sb.Append('─', maxWidth - topHeaderWidth);
+        sb.Append(rNote);
+        sb.Append('─');
+        sb.Append('┐');
+        sb.AppendLine();
+        
+        //header
+        sb.Append('│');
+        sb.Append(' ');
+        sb.Append(' ', (maxWidth - header.Length) / 2);
+        sb.Append(header);
+        sb.Append(' ', (maxWidth - header.Length) / 2 + (maxWidth - header.Length) % 2);
+        sb.Append(' ');
+        sb.Append('│');
+        sb.AppendLine();
+        
+        //blocks
+        string[] lines;
+        foreach (var block in blocks) {
+            lines = block.Split('\n');
+            
+            //line
+            sb.Append('├');
+            sb.Append('─', maxWidth + 2);
+            sb.Append('┤');
+            sb.AppendLine();
+
+            foreach (var line in lines) {
+                sb.Append('│');
+                sb.Append(' ');
+                sb.Append(line);
+                sb.Append(' ', maxWidth - line.Length);
+                sb.Append(' ');
+                sb.Append('│');
+                sb.AppendLine();
+            }
+        }
+        
+        //ending
+        sb.Append('└');
+        sb.Append('─', maxWidth + 2);
+        sb.Append('┘');
+        sb.AppendLine();
+
+        return sb.ToString();
+    }
+
     public static string SongToShortString(RemoteSong? song) {
         return song is null ? "None" : $"{song.Name} [{song.Id}]";
     }

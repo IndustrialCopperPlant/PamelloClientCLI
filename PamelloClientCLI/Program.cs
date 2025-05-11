@@ -41,15 +41,9 @@ class Program
         await _pamello.Authorization.WithTokenAsync(Guid.Parse("71205227-970C-419A-9205-33FF509C1821"));
 
         var command = new DataCommand(_pamello);
-        command.EntityValue = "current";
-        
-        command.Repository = ERepositoryName.Player;
-        await command.Execute();
         command.Repository = ERepositoryName.User;
-        await command.Execute();
-        command.Repository = ERepositoryName.Song;
-        await command.Execute();
-        command.Repository = ERepositoryName.Episode;
+        command.EntityValue = "1";
+        
         await command.Execute();
 
         //WriteHelp();

@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="PamelloV7.Wrapper" Version="0.0.6" />
+      <PackageReference Include="PamelloV7.Wrapper" Version="0.0.9" />
     </ItemGroup>
 
 </Project>

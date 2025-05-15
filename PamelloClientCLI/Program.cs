@@ -38,11 +38,11 @@ class Program
         _savedInfo.Load();
 
         _pamello.ServerHost = "127.0.0.1:51630";
-        await _pamello.Authorization.WithTokenAsync(Guid.Parse("71205227-970C-419A-9205-33FF509C1821"));
+        await _pamello.Authorization.WithTokenAsync(Guid.Parse("D01E6353-2EC7-469C-81A5-D3084FB17151"));
 
         var command = new DataCommand(_pamello);
-        command.Repository = ERepositoryName.User;
-        command.EntityValue = "1";
+        command.Repository = ERepositoryName.Player;
+        command.EntityValue = "current";
         
         await command.Execute();
 

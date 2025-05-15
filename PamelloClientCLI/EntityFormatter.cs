@@ -125,58 +125,64 @@ public class EntityFormatter
     }
     
     public async Task<string> SongToString(RemoteSong song) {
-        return @$"--- Song {song.Id} ---
-{song.Name}
----
-Added by: {UserToShortString(await _pamello.Users.Get(song.AddedById))}
-Favorite by: {song.FavoriteByIds.Count()} Users
-Playcount: {song.PlayCount}
-Added at: {song.AddedAt}
-";
+        return GetFrame(song.Id.ToString(), "", song.Name, [
+            $"""
+            Added by: {UserToShortString(await _pamello.Users.Get(song.AddedById))}
+            Favorite by: {song.FavoriteByIds.Count()} Users
+            Playcount: {song.PlayCount}
+            Added at: {song.AddedAt}
+            """
+        ]);
     }
     
     public async Task<string> PlayerToString(RemotePlayer player) {
         var queueSb = new StringBuilder();
 
         RemoteSong? queueSong;
+        var first = true;
         foreach (var queueEntry in player.QueueEntriesDTOs) {
+            if (first) first = false;
+            else queueSb.AppendLine();
+            
             queueSong = await _pamello.Songs.Get(queueEntry.SongId);
-            queueSb.Append("    ");
-            queueSb.AppendLine(SongToShortString(queueSong));
+            queueSb.Append(SongToShortString(queueSong));
         }
 
         if (queueSb.Length == 0) queueSb.Append("    Empty");
-        
-        return @$"--- Player {player.Id} ---
-{player.Name}
----
-State: {player.State}
-Current Song: {(player.CurrentSongId is not null ? SongToShortString(await _pamello.Songs.Get(player.CurrentSongId.Value)) : "None")}
-Paused: {(player.IsPaused ? "Yes" : "No")}
-Modes:
-    Reversed: {(player.QueueIsReversed ? "Yes" : "No")}
-    Random: {(player.QueueIsRandom ? "Yes" : "No")}
-    No Leftovers: {(player.QueueIsNoLeftovers ? "Yes" : "No")}
-    Feed Random: {(player.QueueIsFeedRandom ? "Yes" : "No")}
-Queue:
-{queueSb}";
+
+        return GetFrame(player.Id.ToString(), "", player.Name, [
+            $"""
+            State: {player.State}
+            Current Song: {(player.CurrentSongId is not null ? SongToShortString(await _pamello.Songs.Get(player.CurrentSongId.Value)) : "None")}
+            Paused: {(player.IsPaused ? "Yes" : "No")}
+            """,
+            $"""
+            Reversed: {(player.QueueIsReversed ? "Yes" : "No")}
+            Random: {(player.QueueIsRandom ? "Yes" : "No")}
+            No Leftovers: {(player.QueueIsNoLeftovers ? "Yes" : "No")}
+            Feed Random: {(player.QueueIsFeedRandom ? "Yes" : "No")}
+            """,
+            queueSb.ToString()
+        ]);
     }
     
     public async Task<string> UserToString(RemoteUser user) {
-        return @$"--- User {user.Id} - {user.DiscordId} ---
-{user.Name}
----
-Selected Player: {PlayerToShortString(await _pamello.Players.Get(user.SelectedPlayerId ?? -1))}
-Songs Added: {user.AddedSongsIds.Count()}
-Songs Played: {user.SongsPlayed}";
+        return GetFrame(user.Id.ToString(), user.DiscordId.ToString(), user.Name, [
+            $"""
+            Selected Player: {PlayerToShortString(await _pamello.Players.Get(user.SelectedPlayerId ?? -1))}
+            Songs Added: {user.AddedSongsIds.Count()}
+            Songs Played: {user.SongsPlayed}"
+            """
+        ]);
     }
     
     public async Task<string> EpisodeToString(RemoteEpisode episode) {
-        return @$"--- Episode {episode.Id} ---
-{new AudioTime(episode.Start).ToShortString()} - {episode.Name}
----
-Song: {SongToShortString(await _pamello.Songs.Get(episode.SongId))}
-Auto Skip: {(episode.Skip ? "Yes" : "No")}
-";
+        return GetFrame(episode.Id.ToString(), "", episode.Name, [
+            new AudioTime(episode.Start).ToString(),
+            $"""
+            Song: {SongToShortString(await _pamello.Songs.Get(episode.SongId))}
+            Auto Skip: {(episode.Skip ? "Yes" : "No")}
+            """
+        ]);
     }
 }
